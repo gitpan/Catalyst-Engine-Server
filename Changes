@@ -1,4 +1,8 @@
 This file documents the revision history for Catalyst::Engine::Server.
 
+0.02  2005-05-26 14:41:00
+        - Improved timeout handling, defaults to 30s
+        - Fixed reverse lookups
+
 0.01  2005-05-24 18:43:00
         - Initial release

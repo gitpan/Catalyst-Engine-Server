@@ -48,7 +48,7 @@ sub handler {
 
     my $http = Catalyst::Engine::HTTP::Base::struct->new(
         address  => $client->peerhost,
-        hostname => $client->peerhost,
+        hostname => $server->{server}->{peerhost},
         request  => $request,
         response => $response
     );
@@ -97,58 +97,89 @@ __PACKAGE__->mk_accessors('application');
 
 sub configure_hook {
     my $self = shift;
+    my $prop = $self->{server};
     
     my $config = $self->application->config->{server} || { };
     
     while ( my ( $property, $value ) = each %{ $config } ) {
-        $self->{server}->{ $property } = $value;
+        $prop->{ $property } = $value;
     }
     
-    if ( $self->{server}->{port} && not ref( $self->{server}->{port} ) ) {
-         $self->{server}->{port} = [ $self->{server}->{port} ];
+    if ( $prop->{port} && not ref( $prop->{port} ) ) {
+         $prop->{port} = [ $prop->{port} ];
     }
 }
 
 sub process_request {
     my $self   = shift;
-    my $client = $self->{server}->{client};
+    my $prop   = $self->{server};
+    my $client = $prop->{client};
+    
+    local $SIG{ALRM} = sub { die "Timeout (30s)\n" };
 
-  PARSE:
-    my $parser = HTTP::Parser->new;
+  REQUEST:
+    
+    my $timeout = 30;
+    my $parser  = HTTP::Parser->new;
+    
+    eval {
 
-    while ( defined( my $read = $client->sysread( my $buf, 2048 ) ) ) {
-        last if $read == 0;
-        last if $parser->add($buf) == 0;
+        alarm($timeout);
+
+        while ( defined( my $read = $client->sysread( my $buf, 2048 ) ) ) {
+            last if $read == 0;
+            last if $parser->add($buf) == 0;
+        }
+        
+        unless ( $client->connected ) {
+            goto DONE;
+        }
+
+        unless ( $parser->request ) {
+            goto DONE;
+        }
+
+        my $request  = $parser->request;
+        my $response = HTTP::Response->new;
+        my $protocol = sprintf( 'HTTP/%s', $request->header('X-HTTP-Version') );
+        
+        $request->protocol($protocol);
+        
+        $self->application->handler( $request, $response, $self );
+        
+        my $connection = $request->header('Connection');
+        
+        $response->date( time() );
+        $response->header( Server => "Catalyst/$Catalyst::VERSION" );
+        $response->protocol($protocol);
+        
+        if ( defined($connection) && $connection =~ /keep-alive/i ) {
+            $response->header( 'Connection' => 'Keep-Alive' );
+            $response->header( 'Keep-Alive' => 'timeout=30, max=100' );
+        }
+        
+        $client->syswrite( $response->as_string );
+        
+        if ( defined($connection) && $connection =~ /Keep-Alive/i ) {
+            goto REQUEST;
+        }
+    };
+
+    if ( my $error = $@ ) {
+        chomp($error);
+     
+        unless ( $error =~ /^Timeout/ ) {
+            warn $error;
+        }
     }
 
-    return unless $client->connected;
-    return unless $parser->request;
+  DONE:
 
-    my $request  = $parser->request;
-    my $response = HTTP::Response->new;
-    my $protocol = sprintf( 'HTTP/%s', $request->header('X-HTTP-Version') );
-
-    $request->protocol($protocol);
-
-    $self->application->handler( $request, $response, $self );
-
-    my $connection = $request->header('Connection');
-
-    $response->date( time() );
-    $response->header( Server => "Catalyst/$Catalyst::VERSION" );
-    $response->protocol($protocol);
-
-    if ( defined($connection) && $connection =~ /keep-alive/i ) {
-        $response->header( Connection => 'keep-alive' );
+    alarm(0);
+    
+    if ( $client->connected ) {
+        $client->close;
     }
-
-    $client->syswrite( $response->as_string );
-
-    if ( defined($connection) && $connection =~ /keep-alive/i ) {
-        goto PARSE;
-    }
-
-    $client->close;
 }
 
 1;

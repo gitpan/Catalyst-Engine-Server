@@ -1,6 +1,6 @@
 ---
 name: Catalyst-Engine-Server
-version: 0.01
+version: 0.02
 author:
   - Christian Hansen, C<ch@ngmedia.com>
 abstract: Catalyst Server Engine
@@ -14,7 +14,7 @@ requires:
 provides:
   Catalyst::Engine::Server:
     file: lib/Catalyst/Engine/Server.pm
-    version: 0.01
+    version: 0.02
   Catalyst::Engine::Server::Base:
     file: lib/Catalyst/Engine/Server/Base.pm
   Catalyst::Engine::Server::Fork:

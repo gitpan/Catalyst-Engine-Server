@@ -3,7 +3,7 @@ package Catalyst::Engine::Server;
 use strict;
 use base 'Catalyst::Engine::Server::PreFork';
 
-our $VERSION = '0.01';
+our $VERSION = '0.02';
 
 =head1 NAME
 
