@@ -1,5 +1,5 @@
 NAME
-    Catalyst::Engine::Server - Catalyst Server Engine
+    Catalyst::Engine::Server - Catalyst Server Engine *DEPRECATED*
 
 SYNOPSIS
     A script using the Catalyst::Engine::Server module might look like:
@@ -15,7 +15,11 @@ SYNOPSIS
         MyApp->run;
 
 DESCRIPTION
-    This Catalyst engine provides a standalone server.
+  DEPRECATED
+
+    This module is no longer recommended, and does not work correctly with
+    latest versions of Catalyst. Please use Catalyst::Engine::HTTP, which is
+    included in the main Catalyst distribution.
 
 TODO
     Make HTTP/1.1 optional.
@@ -24,7 +28,7 @@ SEE ALSO
     Catalyst, Catalyst::Engine, Catalyst::Engine::Server::PreFork.
 
 AUTHOR
-    Christian Hansen, "ch@ngmedia.com"
+    Christian Hansen, `ch@ngmedia.com'
 
 COPYRIGHT
     This program is free software, you can redistribute it and/or modify it

@@ -1,10 +1,12 @@
 ---
 name: Catalyst-Engine-Server
-version: 0.02
+version: 0.03
 author:
-  - Christian Hansen, C<ch@ngmedia.com>
-abstract: Catalyst Server Engine
+  - 'Christian Hansen, C<ch@ngmedia.com>'
+abstract: Catalyst Server Engine *DEPRECATED*
 license: perl
+resources:
+  license: http://dev.perl.org/licenses/
 requires:
   Catalyst: 5.2
   HTTP::Parser: 0
@@ -14,7 +16,7 @@ requires:
 provides:
   Catalyst::Engine::Server:
     file: lib/Catalyst/Engine/Server.pm
-    version: 0.02
+    version: 0.03
   Catalyst::Engine::Server::Base:
     file: lib/Catalyst/Engine/Server/Base.pm
   Catalyst::Engine::Server::Fork:
@@ -31,4 +33,7 @@ provides:
     file: lib/Catalyst/Engine/Server/PreFork.pm
   Catalyst::Engine::Server::Single:
     file: lib/Catalyst/Engine/Server/Single.pm
-generated_by: Module::Build version 0.26
+generated_by: Module::Build version 0.2808
+meta-spec:
+  url: http://module-build.sourceforge.net/META-spec-v1.2.html
+  version: 1.2

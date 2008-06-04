@@ -39,9 +39,9 @@ This class overloads some methods from C<Catalyst::Engine::HTTP::Base>.
 
 sub handler {
     my ( $class, $request, $response, $server ) = @_;
-    
+
     my $client = $server->{server}->{client};
-     
+
     $request->uri->scheme('http');
     $request->uri->host( $request->header('Host') || $client->sockhost );
     $request->uri->port( $client->sockport );
@@ -98,13 +98,13 @@ __PACKAGE__->mk_accessors('application');
 sub configure_hook {
     my $self = shift;
     my $prop = $self->{server};
-    
+
     my $config = $self->application->config->{server} || { };
-    
+
     while ( my ( $property, $value ) = each %{ $config } ) {
         $prop->{ $property } = $value;
     }
-    
+
     if ( $prop->{port} && not ref( $prop->{port} ) ) {
          $prop->{port} = [ $prop->{port} ];
     }
@@ -114,14 +114,14 @@ sub process_request {
     my $self   = shift;
     my $prop   = $self->{server};
     my $client = $prop->{client};
-    
+
     local $SIG{ALRM} = sub { die "Timeout (30s)\n" };
 
   REQUEST:
-    
+
     my $timeout = 30;
     my $parser  = HTTP::Parser->new;
-    
+
     eval {
 
         alarm($timeout);
@@ -130,7 +130,7 @@ sub process_request {
             last if $read == 0;
             last if $parser->add($buf) == 0;
         }
-        
+
         unless ( $client->connected ) {
             goto DONE;
         }
@@ -142,32 +142,41 @@ sub process_request {
         my $request  = $parser->request;
         my $response = HTTP::Response->new;
         my $protocol = sprintf( 'HTTP/%s', $request->header('X-HTTP-Version') );
-        
+
         $request->protocol($protocol);
-        
+
         $self->application->handler( $request, $response, $self );
-        
-        my $connection = $request->header('Connection');
-        
+
         $response->date( time() );
         $response->header( Server => "Catalyst/$Catalyst::VERSION" );
         $response->protocol($protocol);
-        
-        if ( defined($connection) && $connection =~ /keep-alive/i ) {
+
+        my $connection = $request->header('Connection') || '';
+
+        if ( $connection =~ /Keep-Alive/i ) {
             $response->header( 'Connection' => 'Keep-Alive' );
-            $response->header( 'Keep-Alive' => 'timeout=30, max=100' );
+            $response->header( 'Keep-Alive' => 'timeout=60, max=100' );
         }
-        
-        $client->syswrite( $response->as_string );
-        
-        if ( defined($connection) && $connection =~ /Keep-Alive/i ) {
+
+        if ( $connection =~ /close/i ) {
+            $response->header( 'Connection' => 'close' );
+        }
+
+        $client->syswrite( $response->as_string("\x0D\x0A") );
+
+        if ( $protocol eq 'HTTP/1.1' && $connection !~ /close/i ) {
+            goto REQUEST;
+        }
+
+        if ( $protocol ne 'HTTP/1.1' && $connection =~ /Keep-Alive/i ) {
             goto REQUEST;
         }
     };
 
     if ( my $error = $@ ) {
+
         chomp($error);
-     
+
         unless ( $error =~ /^Timeout/ ) {
             warn $error;
         }
@@ -176,9 +185,9 @@ sub process_request {
   DONE:
 
     alarm(0);
-    
+
     if ( $client->connected ) {
-        $client->close;
+        $client->shutdown(2);
     }
 }
 

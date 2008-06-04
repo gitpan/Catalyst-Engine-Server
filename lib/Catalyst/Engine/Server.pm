@@ -3,11 +3,11 @@ package Catalyst::Engine::Server;
 use strict;
 use base 'Catalyst::Engine::Server::PreFork';
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 =head1 NAME
 
-Catalyst::Engine::Server - Catalyst Server Engine
+Catalyst::Engine::Server - Catalyst Server Engine *DEPRECATED*
 
 =head1 SYNOPSIS
 
@@ -25,7 +25,11 @@ A script using the Catalyst::Engine::Server module might look like:
 
 =head1 DESCRIPTION
 
-This Catalyst engine provides a standalone server.
+=head2 DEPRECATED
+
+This module is no longer recommended, and does not work correctly with latest
+versions of Catalyst. Please use L<Catalyst::Engine::HTTP>, which is included
+in the main Catalyst distribution.
 
 =head1 TODO
 
